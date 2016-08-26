@@ -1,5 +1,4 @@
-// Package formjson provides Middleware for converting posted x-www-form-urlencoded data into json
-package main
+package restoauth
 
 import (
 	"bytes"

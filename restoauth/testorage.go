@@ -1,4 +1,4 @@
-package main
+package restoauth
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/RangelReale/osin"
-	"github.com/ant0ine/go-json-rest/rest"
 )
 
 //TestStorage struct
@@ -130,7 +129,7 @@ func (s *TestStorage) RemoveRefresh(code string) error {
 }
 
 //HandleLoginPage with ar resp req
-func HandleLoginPage(ar *osin.AuthorizeRequest, w rest.ResponseWriter, r *http.Request, debug bool) bool {
+func HandleLoginPage(ar *osin.AuthorizeRequest, w http.ResponseWriter, r *http.Request, debug bool) bool {
 	r.ParseForm()
 	if r.Method == "POST" && r.Form.Get("login") == "test" && r.Form.Get("password") == "test" {
 		return true

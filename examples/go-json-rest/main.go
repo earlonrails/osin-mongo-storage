@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"restoauth"
 
 	"github.com/ant0ine/go-json-rest/rest"
 )
@@ -10,13 +11,13 @@ import (
 func main() {
 
 	api := rest.NewApi()
-	oauthHand := NewOAuthHandler("session", "dbname")
+	oauthHand := restoauth.NewOAuthHandler("session", "dbname")
 	// the Middleware stack
 	api.Use(&rest.IfMiddleware{
 		Condition: func(request *rest.Request) bool {
 			return request.Method == "POST"
 		},
-		IfTrue: &FormMiddleware{},
+		IfTrue: &restoauth.FormMiddleware{},
 	})
 	api.Use([]rest.Middleware{
 		&rest.ContentTypeCheckerMiddleware{},
