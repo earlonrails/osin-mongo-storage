@@ -1,11 +1,11 @@
-osin-mongo-storage
+osin-json-rest
 ==================
 
 [![Build Status](https://travis-ci.org/martint17r/osin-mongo-storage.svg?branch=master)](https://travis-ci.org/martint17r/osin-mongo-storage)
 
-This package implements the storage interface for [OSIN](https://github.com/RangelReale/osin) with [MongoDB](http://www.mongodb.org/) using [mgo](http://labix.org/mgo).
+This package uses osin with json-rest and implements the storage interface for [OSIN](https://github.com/RangelReale/osin) with [MongoDB](http://www.mongodb.org/) using [mgo](http://labix.org/mgo).
 
-[![baby-gopher](https://raw2.github.com/drnic/babygopher-site/gh-pages/images/babygopher-badge.png)](http://www.babygopher.org)
+[![baby-gopher](https://raw.githubusercontent.com/drnic/babygopher-site/gh-pages/images/babygopher-badge.png)](http://www.babygopher.org)
 
 Docker
 ------
