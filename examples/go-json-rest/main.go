@@ -29,19 +29,20 @@ func main() {
 	// build the App, here the rest Router
 	router, err := rest.MakeRouter(
 		rest.Get("/api/v1/message", func(w rest.ResponseWriter, req *rest.Request) {
-			w.WriteJson(map[string]string{"Body": "Hello World!"})
+			restoauth.OutJSON(w, "ok", 200, 200)
 		}),
 		rest.Get("/oauth/authorize", func(w rest.ResponseWriter, req *rest.Request) {
 			oauthHand.AuthorizeClient(w.(http.ResponseWriter), req.Request)
-			w.WriteJson(map[string]string{"msg": "ok!", "code": "200"})
+			restoauth.OutJSON(w, "ok", 200, 200)
+
 		}),
 		rest.Post("/oauth/token", func(w rest.ResponseWriter, req *rest.Request) {
 			oauthHand.GenerateToken(w.(http.ResponseWriter), req.Request)
-			w.WriteJson(map[string]string{"msg": "ok!", "code": "200"})
+			restoauth.OutJSON(w, "ok", 200, 200)
 		}),
 		rest.Get("/oauth/info", func(w rest.ResponseWriter, req *rest.Request) {
 			oauthHand.HandleInfo(w.(http.ResponseWriter), req.Request)
-			w.WriteJson(map[string]string{"msg": "ok!", "code": "200"})
+			restoauth.OutJSON(w, "ok", 200, 200)
 		}),
 	)
 	if err != nil {

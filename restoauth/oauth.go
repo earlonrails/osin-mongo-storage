@@ -8,8 +8,18 @@ import (
 	"net/http"
 
 	"github.com/RangelReale/osin"
+	"github.com/ant0ine/go-json-rest/rest"
 	"gopkg.in/mgo.v2/bson"
 )
+
+//OutJSON return json
+func OutJSON(w rest.ResponseWriter, err string, status int, code int) {
+	w.WriteHeader(status)
+	e := w.WriteJson(map[string]interface{}{"msg": err, "code": code})
+	if e != nil {
+		panic(e)
+	}
+}
 
 //OAuthHandler type
 type OAuthHandler struct {
