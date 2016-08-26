@@ -31,15 +31,15 @@ func main() {
 			w.WriteJson(map[string]string{"Body": "Hello World!"})
 		}),
 		rest.Get("/oauth/authorize", func(w rest.ResponseWriter, req *rest.Request) {
-			oauthHand.AuthorizeClient(w, req.Request)
+			oauthHand.AuthorizeClient(w.(http.ResponseWriter), req.Request)
 			w.WriteJson(map[string]string{"msg": "ok!", "code": "200"})
 		}),
 		rest.Post("/oauth/token", func(w rest.ResponseWriter, req *rest.Request) {
-			oauthHand.GenerateToken(w, req.Request)
+			oauthHand.GenerateToken(w.(http.ResponseWriter), req.Request)
 			w.WriteJson(map[string]string{"msg": "ok!", "code": "200"})
 		}),
 		rest.Get("/oauth/info", func(w rest.ResponseWriter, req *rest.Request) {
-			oauthHand.HandleInfo(w, req.Request)
+			oauthHand.HandleInfo(w.(http.ResponseWriter), req.Request)
 			w.WriteJson(map[string]string{"msg": "ok!", "code": "200"})
 		}),
 	)
@@ -50,7 +50,7 @@ func main() {
 
 	// build and run the handler
 	log.Fatal(http.ListenAndServe(
-		":3000",
+		":8080",
 		api.MakeHandler(),
 	))
 }

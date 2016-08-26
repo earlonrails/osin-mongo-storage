@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/RangelReale/osin"
-	"github.com/ant0ine/go-json-rest/rest"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -23,9 +22,10 @@ type OAuthHandler struct {
 type UserData bson.M
 
 // AuthorizeClient is the Authorization code endpoint
-func (oauth *OAuthHandler) AuthorizeClient(w rest.ResponseWriter, r *http.Request) {
+func (oauth *OAuthHandler) AuthorizeClient(w http.ResponseWriter, r *http.Request) {
 	server := oauth.server
 	resp := server.NewResponse()
+	defer resp.Close()
 	if ar := server.HandleAuthorizeRequest(resp, r); ar != nil {
 		if !HandleLoginPage(ar, w, r, true) {
 			return
@@ -38,14 +38,15 @@ func (oauth *OAuthHandler) AuthorizeClient(w rest.ResponseWriter, r *http.Reques
 		fmt.Printf("ERROR: %s\n", resp.InternalError)
 	}
 	if !resp.IsError {
-		resp.Output["custom_parameter"] = 187723
+		resp.Output["scope"] = "everything"
 	}
-	defer resp.Close()
-	//osin.OutputJSON(resp, w, r)
+	//w.Header().Add("Location", "http://www.baidu.com")
+	//w.WriteHeader(302)
+	osin.OutputJSON(resp, w, r)
 }
 
 //GenerateToken  Access token endpoint
-func (oauth *OAuthHandler) GenerateToken(w rest.ResponseWriter, r *http.Request) {
+func (oauth *OAuthHandler) GenerateToken(w http.ResponseWriter, r *http.Request) {
 	server := oauth.server
 	resp := server.NewResponse()
 	body, err := ioutil.ReadAll(r.Body)
@@ -88,11 +89,11 @@ func (oauth *OAuthHandler) GenerateToken(w rest.ResponseWriter, r *http.Request)
 	}
 
 	defer resp.Close()
-	//osin.OutputJSON(resp, w, r)
+	osin.OutputJSON(resp, w, r)
 }
 
 //HandleInfo Information endpoint
-func (oauth *OAuthHandler) HandleInfo(w rest.ResponseWriter, r *http.Request) {
+func (oauth *OAuthHandler) HandleInfo(w http.ResponseWriter, r *http.Request) {
 	server := oauth.server
 	resp := server.NewResponse()
 	if ir := server.HandleInfoRequest(resp, r); ir != nil {
@@ -102,7 +103,7 @@ func (oauth *OAuthHandler) HandleInfo(w rest.ResponseWriter, r *http.Request) {
 		fmt.Printf("ERROR: %s\n", resp.InternalError)
 	}
 	defer resp.Close()
-	//osin.OutputJSON(resp, w, r)
+	osin.OutputJSON(resp, w, r)
 }
 
 //NewOAuthHandler new the oauth handler
