@@ -1,25 +1,33 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
-
 	"github.com/RangelReale/osin"
-	"github.com/RangelReale/osin/example"
-	"github.com/martint17r/osin-mongo-storage/mgostore"
+	"github.com/ant0ine/go-json-rest/rest"
+	"gopkg.in/mgo.v2/bson"
 )
 
+//OAuthHandler type
+type OAuthHandler struct {
+	sconfig *osin.ServerConfig
+	server  *osin.Server
+	Storage *TestStorage
+}
+
+//UserData bson store
 type UserData bson.M
 
 // AuthorizeClient is the Authorization code endpoint
-func (oauth *oAuthHandler) AuthorizeClient(w http.ResponseWriter, r *http.Request) {
+func (oauth *OAuthHandler) AuthorizeClient(w rest.ResponseWriter, r *http.Request) {
 	server := oauth.server
 	resp := server.NewResponse()
 	if ar := server.HandleAuthorizeRequest(resp, r); ar != nil {
-		if !example.HandleLoginPage(ar, w, r) {
+		if !HandleLoginPage(ar, w, r, true) {
 			return
 		}
 		ar.UserData = UserData{"Login": "test"}
@@ -32,14 +40,36 @@ func (oauth *oAuthHandler) AuthorizeClient(w http.ResponseWriter, r *http.Reques
 	if !resp.IsError {
 		resp.Output["custom_parameter"] = 187723
 	}
-	osin.OutputJSON(resp, w, r)
+	defer resp.Close()
+	//osin.OutputJSON(resp, w, r)
 }
 
-// Access token endpoint
-func (oauth *oAuthHandler) GenerateToken(w http.ResponseWriter, r *http.Request) {
+//GenerateToken  Access token endpoint
+func (oauth *OAuthHandler) GenerateToken(w rest.ResponseWriter, r *http.Request) {
 	server := oauth.server
 	resp := server.NewResponse()
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	var fbody interface{}
+	err = json.Unmarshal(body, &fbody)
+	m := fbody.(map[string]interface{})
+
+	var formString bytes.Buffer
+	for k, v := range m {
+		formString.WriteString("&")
+		formString.WriteString(k)
+		formString.WriteString("=")
+		formString.WriteString(v.(string))
+	}
+
+	r.Body = ioutil.NopCloser(bytes.NewReader([]byte(string(formString.String()))))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
 	if ar := server.HandleAccessRequest(resp, r); ar != nil {
+
 		switch ar.Type {
 		case osin.AUTHORIZATION_CODE:
 			ar.Authorized = true
@@ -56,32 +86,36 @@ func (oauth *oAuthHandler) GenerateToken(w http.ResponseWriter, r *http.Request)
 	if !resp.IsError {
 		resp.Output["custom_parameter"] = 19923
 	}
-	osin.OutputJSON(resp, w, r)
+
+	defer resp.Close()
+	//osin.OutputJSON(resp, w, r)
 }
 
-// Information endpoint
-func (oauth *oAuthHandler) HandleInfo(w http.ResponseWriter, r *http.Request) {
+//HandleInfo Information endpoint
+func (oauth *OAuthHandler) HandleInfo(w rest.ResponseWriter, r *http.Request) {
 	server := oauth.server
 	resp := server.NewResponse()
 	if ir := server.HandleInfoRequest(resp, r); ir != nil {
 		server.FinishInfoRequest(resp, r, ir)
 	}
-	osin.OutputJSON(resp, w, r)
+	if resp.IsError && resp.InternalError != nil {
+		fmt.Printf("ERROR: %s\n", resp.InternalError)
+	}
+	defer resp.Close()
+	//osin.OutputJSON(resp, w, r)
 }
 
-type oAuthHandler struct {
-	sconfig *osin.ServerConfig
-	server  *osin.Server
-	Storage *mgostore.MongoStorage
-}
-
-func NewOAuthHandler(session *mgo.Session, dbName string) *oAuthHandler {
+//NewOAuthHandler new the oauth handler
+func NewOAuthHandler(session string, dbName string) *OAuthHandler {
 	sconfig := osin.NewServerConfig()
 	sconfig.AllowedAuthorizeTypes = osin.AllowedAuthorizeType{osin.CODE, osin.TOKEN}
 	sconfig.AllowedAccessTypes = osin.AllowedAccessType{osin.AUTHORIZATION_CODE,
 		osin.REFRESH_TOKEN, osin.PASSWORD, osin.CLIENT_CREDENTIALS, osin.ASSERTION}
+
+	sconfig.AllowClientSecretInParams = true
 	sconfig.AllowGetAccessRequest = true
-	storage := mgostore.New(session, dbName)
+	storage := NewTestStorage()
 	server := osin.NewServer(sconfig, storage)
-	return &oAuthHandler{sconfig, server, storage}
+	return &OAuthHandler{sconfig, server, storage}
+
 }

@@ -1,79 +1,56 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
-	"os"
 
-	"github.com/martint17r/osin-mongo-storage/mgostore"
-
-	"github.com/RangelReale/osin"
 	"github.com/ant0ine/go-json-rest/rest"
-	"github.com/gorilla/context"
-	"github.com/gorilla/mux"
-	"labix.org/v2/mgo"
 )
 
 func main() {
-	mainRouter := mux.NewRouter()
-	oAuth := setupOAuth(mainRouter)
-	setupRestAPI(mainRouter, oAuth)
 
-	port := fmt.Sprintf(":%v", getenvOrDefault("PORT", "3000"))
-	fmt.Printf("Listening on port %v\n", port)
+	api := rest.NewApi()
+	oauthHand := NewOAuthHandler("session", "dbname")
+	// the Middleware stack
+	api.Use(&rest.IfMiddleware{
+		Condition: func(request *rest.Request) bool {
+			return request.Method == "POST"
+		},
+		IfTrue: &FormMiddleware{},
+	})
+	api.Use([]rest.Middleware{
+		&rest.ContentTypeCheckerMiddleware{},
+	}...)
 
-	http.ListenAndServe(port, mainRouter)
-}
+	api.Use(rest.DefaultDevStack...)
+	api.Use(oauthHand)
 
-func setupOAuth(router *mux.Router) *oAuthHandler {
-	session, err := mgo.Dial(getenvOrDefault("MGOSTORE_MONGO_URL", "localhost"))
-	if err != nil {
-		panic(err)
-	}
-	oAuth := NewOAuthHandler(session, "osinmongostoragetest")
-
-	if _, err := oAuth.Storage.GetClient("1234"); err != nil {
-		if _, err := setClient1234(oAuth.Storage); err != nil {
-			panic(err)
-		}
-	}
-
-	oauthSub := router.PathPrefix("/oauth2").Subrouter()
-	oauthSub.HandleFunc("/authorize", oAuth.AuthorizeClient)
-	oauthSub.HandleFunc("/token", oAuth.GenerateToken)
-	oauthSub.HandleFunc("/info", oAuth.HandleInfo)
-
-	return oAuth
-}
-
-func setupRestAPI(router *mux.Router, oAuth *oAuthHandler) {
-	handler := rest.ResourceHandler{
-		EnableRelaxedContentType: true,
-		PreRoutingMiddlewares:    []rest.Middleware{oAuth},
-	}
-	handler.SetRoutes(
-		&rest.Route{"GET", "/api/me", func(w rest.ResponseWriter, req *rest.Request) {
-			data := context.Get(req.Request, USERDATA)
-			w.WriteJson(&data)
-		}},
+	// build the App, here the rest Router
+	router, err := rest.MakeRouter(
+		rest.Get("/api/v1/message", func(w rest.ResponseWriter, req *rest.Request) {
+			w.WriteJson(map[string]string{"Body": "Hello World!"})
+		}),
+		rest.Get("/oauth/authorize", func(w rest.ResponseWriter, req *rest.Request) {
+			oauthHand.AuthorizeClient(w, req.Request)
+			w.WriteJson(map[string]string{"msg": "ok!", "code": "200"})
+		}),
+		rest.Post("/oauth/token", func(w rest.ResponseWriter, req *rest.Request) {
+			oauthHand.GenerateToken(w, req.Request)
+			w.WriteJson(map[string]string{"msg": "ok!", "code": "200"})
+		}),
+		rest.Get("/oauth/info", func(w rest.ResponseWriter, req *rest.Request) {
+			oauthHand.HandleInfo(w, req.Request)
+			w.WriteJson(map[string]string{"msg": "ok!", "code": "200"})
+		}),
 	)
-
-	router.Handle("/api/me", &handler)
-}
-
-func setClient1234(storage *mgostore.MongoStorage) (*osin.Client, error) {
-	client := &osin.Client{
-		Id:          "1234",
-		Secret:      "aabbccdd",
-		RedirectUri: "http://localhost:14000/appauth"}
-	err := storage.SetClient("1234", client)
-	return client, err
-}
-
-func getenvOrDefault(key, def string) string {
-	value := os.Getenv(key)
-	if value == "" {
-		return def
+	if err != nil {
+		log.Fatal(err)
 	}
-	return value
+	api.SetApp(router)
+
+	// build and run the handler
+	log.Fatal(http.ListenAndServe(
+		":3000",
+		api.MakeHandler(),
+	))
 }

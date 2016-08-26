@@ -11,10 +11,16 @@ import (
 
 type contextKey int
 
+//USERDATA context data
 const USERDATA contextKey = 0
 
-func (oauth *oAuthHandler) MiddlewareFunc(handler rest.HandlerFunc) rest.HandlerFunc {
+//MiddlewareFunc implement from rest
+func (oauth *OAuthHandler) MiddlewareFunc(handler rest.HandlerFunc) rest.HandlerFunc {
 	return func(writer rest.ResponseWriter, request *rest.Request) {
+		if strings.HasPrefix(request.URL.Path, "/oauth") {
+			handler(writer, request)
+			return
+		}
 
 		authHeader := request.Header.Get("Authorization")
 		if authHeader == "" {
@@ -37,7 +43,7 @@ func (oauth *oAuthHandler) MiddlewareFunc(handler rest.HandlerFunc) rest.Handler
 			oauth.unauthorized(writer)
 			return
 		}
-		if accessData.Client.RedirectUri == "" {
+		if accessData.Client.GetRedirectUri() == "" {
 			oauth.unauthorized(writer)
 			return
 		}
@@ -53,7 +59,7 @@ func (oauth *oAuthHandler) MiddlewareFunc(handler rest.HandlerFunc) rest.Handler
 
 }
 
-func (oauth *oAuthHandler) extractToken(header string) (string, error) {
+func (oauth *OAuthHandler) extractToken(header string) (string, error) {
 	parts := strings.SplitN(header, " ", 2)
 	if !(len(parts) == 2 && parts[0] == "Bearer") {
 		return "", errors.New("Invalid authentication")
@@ -62,6 +68,6 @@ func (oauth *oAuthHandler) extractToken(header string) (string, error) {
 	return parts[1], nil
 }
 
-func (oauth *oAuthHandler) unauthorized(writer rest.ResponseWriter) {
+func (oauth *OAuthHandler) unauthorized(writer rest.ResponseWriter) {
 	rest.Error(writer, "Not Authorized", http.StatusUnauthorized)
 }
