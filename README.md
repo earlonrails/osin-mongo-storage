@@ -19,6 +19,12 @@ All structs are serialized as is, i.e. no references are created or resolved.
 Currently MongoDB >= 2.6 is required, on 2.4 the TestLoad* Tests fail, but I do not know why.
 
 
+Related projects
+-----
+This project's form middleware  inspired by the following projects:
+
+<https://github.com/boonep/go-json-rest-middleware-formjson>
+
 Examples
 --------
 
