@@ -30,6 +30,10 @@ Examples
 
 See the examples subdirectory for integrating into OSIN.
 
+TODO
+-------
+- [ ] Add the cache support
+- [ ] Add the https support 
 
 License
 -------
