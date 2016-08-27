@@ -4,8 +4,7 @@ import (
 	"log"
 	"net/http"
 	"restoauth"
-
-	mgo "gopkg.in/mgo.v2"
+	"restoauth/model"
 
 	"github.com/ant0ine/go-json-rest/rest"
 )
@@ -16,13 +15,9 @@ func main() {
 	//oauthHand := restoauth.NewOAuthHandler("session", "dbname")
 
 	//mongo oauth middleware hand
-	session, err := mgo.Dial(restoauth.GetenvOrDefault("MGOSTORE_MONGO_URL", "localhost"))
-	defer session.Close()
-	session.SetMode(mgo.Monotonic, true)
-	if err != nil {
-		panic(err)
-	}
-	oauthHand := restoauth.NewOAuthHandlerByMgo(session, "osinmongostorage")
+	db := model.DBImpl{}
+	db.InitDB("local")
+	oauthHand := restoauth.NewOAuthHandlerByMgo(db.DB, "osinmongostorage")
 	mgostore := oauthHand.Storage.(*restoauth.MongoStorage)
 	restoauth.SetMgoClient1234(mgostore)
 
@@ -42,7 +37,7 @@ func main() {
 
 	// build the App, here the rest Router
 	router, err := rest.MakeRouter(
-		rest.Get("/api/v1/message", func(w rest.ResponseWriter, req *rest.Request) {
+		rest.Get("/api/v1/me", func(w rest.ResponseWriter, req *rest.Request) {
 			restoauth.OutJSON(w, "ok", 200, 200)
 		}),
 		rest.Get("/oauth/authorize", func(w rest.ResponseWriter, req *rest.Request) {
@@ -57,6 +52,12 @@ func main() {
 			oauthHand.HandleInfo(w.(http.ResponseWriter), req.Request)
 			//restoauth.OutJSON(w, "ok", 200, 200)
 		}),
+
+		rest.Get("/api/v1/reminders", db.GetAllReminders),
+		rest.Post("/api/v1/reminders", db.PostReminder),
+		rest.Get("/api/v1/reminders/:id", db.GetReminder),
+		rest.Put("/api/v1/reminders/:id", db.PutReminder),
+		rest.Delete("/api/v1/reminders/:id", db.DeleteReminder),
 	)
 	if err != nil {
 		log.Fatal(err)
