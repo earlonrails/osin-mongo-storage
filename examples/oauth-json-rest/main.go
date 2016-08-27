@@ -42,7 +42,7 @@ func main() {
 
 	// build the App, here the rest Router
 	router, err := rest.MakeRouter(
-		rest.Get("/api/v1/me", func(w rest.ResponseWriter, req *rest.Request) {
+		rest.Get("/api/v1/message", func(w rest.ResponseWriter, req *rest.Request) {
 			restoauth.OutJSON(w, "ok", 200, 200)
 		}),
 		rest.Get("/oauth/authorize", func(w rest.ResponseWriter, req *rest.Request) {
@@ -65,7 +65,7 @@ func main() {
 
 	// build and run the handler
 	log.Fatal(http.ListenAndServe(
-		":8080",
+		":3000",
 		api.MakeHandler(),
 	))
 }

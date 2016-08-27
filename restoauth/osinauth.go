@@ -5,10 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	"github.com/RangelReale/osin"
 	"github.com/ant0ine/go-json-rest/rest"
+	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -25,7 +27,7 @@ func OutJSON(w rest.ResponseWriter, err string, status int, code int) {
 type OAuthHandler struct {
 	sconfig *osin.ServerConfig
 	server  *osin.Server
-	Storage *TestStorage
+	Storage osin.Storage
 }
 
 //UserData bson store
@@ -45,7 +47,7 @@ func (oauth *OAuthHandler) AuthorizeClient(w http.ResponseWriter, r *http.Reques
 		server.FinishAuthorizeRequest(resp, r, ar)
 	}
 	if resp.IsError && resp.InternalError != nil {
-		fmt.Printf("ERROR: %s\n", resp.InternalError)
+		log.Printf("Authorized:ERROR: %s\n", resp.InternalError)
 	}
 	if !resp.IsError {
 		resp.Output["scope"] = "everything"
@@ -92,7 +94,7 @@ func (oauth *OAuthHandler) GenerateToken(w http.ResponseWriter, r *http.Request)
 		server.FinishAccessRequest(resp, r, ar)
 	}
 	if resp.IsError && resp.InternalError != nil {
-		fmt.Printf("ERROR: %s\n", resp.InternalError)
+		log.Printf("TokenERROR: %s\n", resp.InternalError)
 	}
 	if !resp.IsError {
 		resp.Output["custom_parameter"] = 19923
@@ -126,6 +128,21 @@ func NewOAuthHandler(session string, dbName string) *OAuthHandler {
 	sconfig.AllowClientSecretInParams = true
 	sconfig.AllowGetAccessRequest = true
 	storage := NewTestStorage()
+	server := osin.NewServer(sconfig, storage)
+	return &OAuthHandler{sconfig, server, storage}
+
+}
+
+//NewOAuthHandlerByMgo new the oauth handler
+func NewOAuthHandlerByMgo(session *mgo.Session, dbName string) *OAuthHandler {
+	sconfig := osin.NewServerConfig()
+	sconfig.AllowedAuthorizeTypes = osin.AllowedAuthorizeType{osin.CODE, osin.TOKEN}
+	sconfig.AllowedAccessTypes = osin.AllowedAccessType{osin.AUTHORIZATION_CODE,
+		osin.REFRESH_TOKEN, osin.PASSWORD, osin.CLIENT_CREDENTIALS, osin.ASSERTION}
+
+	sconfig.AllowClientSecretInParams = true
+	sconfig.AllowGetAccessRequest = true
+	storage := NewMgoStorage(session, dbName)
 	server := osin.NewServer(sconfig, storage)
 	return &OAuthHandler{sconfig, server, storage}
 
