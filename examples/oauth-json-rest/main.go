@@ -2,9 +2,9 @@ package main
 
 import (
 	"log"
+	"models"
 	"net/http"
 	"restoauth"
-	"restoauth/model"
 
 	"github.com/ant0ine/go-json-rest/rest"
 )
@@ -15,8 +15,10 @@ func main() {
 	//oauthHand := restoauth.NewOAuthHandler("session", "dbname")
 
 	//mongo oauth middleware hand
-	db := model.DBImpl{}
+	db := restoauth.DBImpl{}
 	db.InitDB("local")
+	remind := models.NewReminderModel(&db)
+
 	oauthHand := restoauth.NewOAuthHandlerByMgo(db.DB, "osinmongostorage")
 	mgostore := oauthHand.Storage.(*restoauth.MongoStorage)
 	restoauth.SetMgoClient1234(mgostore)
@@ -53,11 +55,11 @@ func main() {
 			//restoauth.OutJSON(w, "ok", 200, 200)
 		}),
 
-		rest.Get("/api/v1/reminders", db.GetAllReminders),
-		rest.Post("/api/v1/reminders", db.PostReminder),
-		rest.Get("/api/v1/reminders/:id", db.GetReminder),
-		rest.Put("/api/v1/reminders/:id", db.PutReminder),
-		rest.Delete("/api/v1/reminders/:id", db.DeleteReminder),
+		rest.Get("/api/v1/reminders", remind.GetAllRes),
+		rest.Post("/api/v1/reminders", remind.CreateRes),
+		rest.Get("/api/v1/reminders/:id", remind.GetOneRes),
+		rest.Put("/api/v1/reminders/:id", remind.UpdateRes),
+		rest.Delete("/api/v1/reminders/:id", remind.RemoveRes),
 	)
 	if err != nil {
 		log.Fatal(err)

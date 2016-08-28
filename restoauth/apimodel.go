@@ -1,28 +1,27 @@
-package model
+package restoauth
 
 import (
 	"os"
 
+	"github.com/ant0ine/go-json-rest/rest"
+
 	mgo "gopkg.in/mgo.v2"
 )
 
-//DBInterface inter
-type DBInterface interface {
-	//setModel(table string) *mgo.Collection
-	InitDB(dbName string)
+//TableInterface  inter
+type TableInterface interface {
+	GetOneRes(w rest.ResponseWriter, r *rest.Request)
+	GetAllRes(w rest.ResponseWriter, r *rest.Request)
+	RemoveRes(w rest.ResponseWriter, r *rest.Request)
+	CreateRes(w rest.ResponseWriter, r *rest.Request)
+	UpdateRes(w rest.ResponseWriter, r *rest.Request)
 }
 
 //DBImpl with mgo
 type DBImpl struct {
 	DB     *mgo.Session
-	dbName string
-	remind *mgo.Collection
+	DBName string
 }
-
-// some const
-const (
-	REMIND string = "remind"
-)
 
 //GetenvOrDefault key,def
 func GetenvOrDefault(key, def string) string {
@@ -40,6 +39,6 @@ func (i *DBImpl) InitDB(dbName string) {
 	if err != nil {
 		panic(err)
 	}
+	i.DBName = dbName
 	i.DB.SetMode(mgo.Monotonic, true)
-	i.remind = i.DB.DB(dbName).C(REMIND)
 }
