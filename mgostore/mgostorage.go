@@ -83,6 +83,7 @@ func (store *MongoStorage) GetClient(id string) (osin.Client, error) {
 	clients := session.DB(store.dbName).C(CLIENT_COL)
 	mgoClient := models.NewMgoClient(nil)
 	err := clients.FindId(id).One(mgoClient)
+	err := clients.FindId(bson.ObjectIdHex(id)).One(mgoClient)
 	return mgoClient.MapToOsinClient(), err
 }
 
