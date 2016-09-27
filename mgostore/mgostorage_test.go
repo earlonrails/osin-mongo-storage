@@ -9,7 +9,7 @@ import (
 
 	"github.com/RangelReale/osin"
 	"gopkg.in/mgo.v2/mgo"
-	"gopkg.in/mgo.v2/mgo/bson"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var session *mgo.Session
