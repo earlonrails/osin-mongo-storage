@@ -51,7 +51,7 @@ func (store *MongoStorage) GetClient(id string) (osin.Client, error) {
     defer session.Close()
     clients := session.DB(store.dbName).C(CLIENT_COL)
     client := new(osin.DefaultClient)
-    err := clients.FindId(id).One(client)
+    err := clients.FindId(bson.ObjectIdHex(id)).One(client)
     return client, err
 }
 
