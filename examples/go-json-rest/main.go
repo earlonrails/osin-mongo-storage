@@ -47,18 +47,19 @@ func setupOAuth(router *mux.Router) *oAuthHandler {
 }
 
 func setupRestAPI(router *mux.Router, oAuth *oAuthHandler) {
-    handler := rest.ResourceHandler{
-        EnableRelaxedContentType: true,
-        PreRoutingMiddlewares:    []rest.Middleware{oAuth},
-    }
-    handler.SetRoutes(
-        &rest.Route{"GET", "/api/me", func(w rest.ResponseWriter, req *rest.Request) {
+    api := rest.NewApi()
+    api.Use(rest.DefaultDevStack...)
+    restRouter, err := rest.MakeRouter(
+        rest.Get("/api/me", func(w rest.ResponseWriter, req *rest.Request) {
             data := context.Get(req.Request, USERDATA)
             w.WriteJson(&data)
-        }},
+        }),
     )
-
-    router.Handle("/api/me", &handler)
+    if err != nil {
+        panic(err)
+    }
+    api.SetApp(restRouter)
+    router.Handle("/api/me", api.MakeHandler())
 }
 
 func setClient1234(storage *mgostore.MongoStorage) (osin.Client, error) {
