@@ -9,7 +9,7 @@ import (
 
     "github.com/RangelReale/osin"
     "github.com/RangelReale/osin/example"
-    "github.com/ashkang/osin-mongo-storage/mgostore"
+    "github.com/earlonrails/osin-mongo-storage/mgostore"
 )
 
 type UserData bson.M

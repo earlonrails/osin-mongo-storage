@@ -5,7 +5,7 @@ import (
     "net/http"
     "os"
 
-    "github.com/ashkang/osin-mongo-storage/mgostore"
+    "github.com/earlonrails/osin-mongo-storage/mgostore"
 
     "github.com/RangelReale/osin"
     "github.com/ant0ine/go-json-rest/rest"
