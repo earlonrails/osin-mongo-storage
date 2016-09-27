@@ -5,11 +5,12 @@ import (
 	"math/rand"
 	"os"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/RangelReale/osin"
-	"labix.org/v2/mgo"
-	"labix.org/v2/mgo/bson"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2/bson"
 )
 
 var session *mgo.Session
@@ -58,12 +59,13 @@ func deleteTestDatabase(storage *MongoStorage) {
 	}
 }
 
-func setClient1234(storage *MongoStorage) (*osin.Client, error) {
-	client := &osin.Client{
+func setClient1234(storage *MongoStorage) (osin.DefaultClient, error) {
+	client := osin.DefaultClient{
 		Id:          "1234",
 		Secret:      "aabbccdd",
-		RedirectUri: "http://localhost:14000/appauth"}
-	err := storage.SetClient(client.Id, client)
+		RedirectUri: "http://localhost:14000/appauth",
+	}
+	err := storage.SetClient(client.Id, &client)
 	return client, err
 }
 
@@ -84,12 +86,12 @@ func TestGetClient(t *testing.T) {
 		t.Errorf("setClient returned err: %v", err)
 		return
 	}
-	getClient, err := storage.GetClient(client.Id)
+	getClient, err := storage.GetClient(client.GetId())
 	if err != nil {
 		t.Errorf("getClient returned err: %v", err)
 		return
 	}
-	if !reflect.DeepEqual(client, getClient) {
+	if !reflect.DeepEqual(&client, getClient) {
 		t.Errorf("TestGet failed, expected: '%+v', got: '%+v'", client, getClient)
 	}
 }
@@ -100,7 +102,7 @@ func saveAuthorization(storage *MongoStorage) (*osin.AuthorizeData, error) {
 		return &osin.AuthorizeData{}, err
 	}
 	data := &osin.AuthorizeData{
-		Client:      client,
+		Client:      &client,
 		Code:        "9999",
 		ExpiresIn:   3600,
 		CreatedAt:   bson.Now(),
@@ -172,7 +174,7 @@ func TestRemoveAuthorization(t *testing.T) {
 	}
 }
 
-func saveAccess(storage *MongoStorage) (*osin.AccessData, error) {
+func saveAccess(storage *MongoStorage, token string) (*osin.AccessData, error) {
 	authData, err := saveAuthorization(storage)
 	if err != nil {
 		return &osin.AccessData{}, err
@@ -181,7 +183,7 @@ func saveAccess(storage *MongoStorage) (*osin.AccessData, error) {
 	data := &osin.AccessData{
 		Client:        authData.Client,
 		AuthorizeData: authData,
-		AccessToken:   "9999",
+		AccessToken:   token,
 		RefreshToken:  "r9999",
 		ExpiresIn:     3600,
 		CreatedAt:     bson.Now(),
@@ -200,10 +202,39 @@ func TestLoadAccessNotExisting(t *testing.T) {
 	}
 }
 
+func TestLoadAccesses(t *testing.T) {
+	storage := initTestStorage()
+	defer deleteTestDatabase(storage)
+
+	var input = make([]*osin.AccessData, 10)
+	for i := 0; i < 10; i++ {
+		data, err := saveAccess(storage, strconv.Itoa(i))
+		if err != nil {
+			t.Errorf("saveAccess returned err: %v", err)
+		}
+
+		input[i] = data
+	}
+
+	client, err := storage.GetClient("1234")
+	if err != nil {
+		t.Errorf("GetClient returned err: %v", err)
+	}
+
+	output, err := storage.LoadAccesses(bson.M{"client._id": client.GetId()})
+	if err != nil {
+		t.Errorf("LoadAccesses returned err: %v", err)
+	}
+
+	if !reflect.DeepEqual(input, output) {
+		t.Errorf("LoadAccesses failed, expected: '%+v', got: '%+v'", input, output)
+	}
+}
+
 func TestLoadAccess(t *testing.T) {
 	storage := initTestStorage()
 	defer deleteTestDatabase(storage)
-	data, err := saveAccess(storage)
+	data, err := saveAccess(storage, "9999")
 	if err != nil {
 		t.Errorf("saveAccess returned err: %v", err)
 		return
@@ -230,7 +261,7 @@ func TestRemoveAccessNonExisting(t *testing.T) {
 func TestRemoveAccess(t *testing.T) {
 	storage := initTestStorage()
 	defer deleteTestDatabase(storage)
-	data, err := saveAccess(storage)
+	data, err := saveAccess(storage, "9999")
 	if err != nil {
 		t.Errorf("saveAccess returned err: %v", err)
 		return
@@ -245,7 +276,7 @@ func TestRemoveAccess(t *testing.T) {
 func TestLoadRefresh(t *testing.T) {
 	storage := initTestStorage()
 	defer deleteTestDatabase(storage)
-	data, err := saveAccess(storage)
+	data, err := saveAccess(storage, "9999")
 	if err != nil {
 		t.Errorf("saveAccess returned err: %v", err)
 		return
@@ -272,7 +303,7 @@ func TestRemoveRefreshNonExisting(t *testing.T) {
 func TestRemoveRefresh(t *testing.T) {
 	storage := initTestStorage()
 	defer deleteTestDatabase(storage)
-	data, err := saveAccess(storage)
+	data, err := saveAccess(storage, "9999")
 	if err != nil {
 		t.Errorf("saveAccess returned err: %v", err)
 		return
