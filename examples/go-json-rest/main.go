@@ -5,13 +5,13 @@ import (
     "net/http"
     "os"
 
-    "github.com/ashkang/osin-mongo-storage/mgostore"
+    "github.com/earlonrails/osin-mongo-storage/mgostore"
 
     "github.com/RangelReale/osin"
     "github.com/ant0ine/go-json-rest/rest"
     "github.com/gorilla/context"
     "github.com/gorilla/mux"
-    "labix.org/v2/mgo"
+    "gopkg.in/mgo.v2"
 )
 
 func main() {
@@ -47,21 +47,22 @@ func setupOAuth(router *mux.Router) *oAuthHandler {
 }
 
 func setupRestAPI(router *mux.Router, oAuth *oAuthHandler) {
-    handler := rest.ResourceHandler{
-        EnableRelaxedContentType: true,
-        PreRoutingMiddlewares:    []rest.Middleware{oAuth},
-    }
-    handler.SetRoutes(
-        &rest.Route{"GET", "/api/me", func(w rest.ResponseWriter, req *rest.Request) {
+    api := rest.NewApi()
+    api.Use(rest.DefaultDevStack...)
+    restRouter, err := rest.MakeRouter(
+        rest.Get("/api/me", func(w rest.ResponseWriter, req *rest.Request) {
             data := context.Get(req.Request, USERDATA)
             w.WriteJson(&data)
-        }},
+        }),
     )
-
-    router.Handle("/api/me", &handler)
+    if err != nil {
+        panic(err)
+    }
+    api.SetApp(restRouter)
+    router.Handle("/api/me", api.MakeHandler())
 }
 
-func setClient1234(storage *mgostore.MongoStorage) (osin.Client, error) {
+func setClient1234(storage *mgostore.MongoStorage) (*osin.DefaultClient, error) {
     client := &osin.DefaultClient{
         Id:          "1234",
         Secret:      "aabbccdd",

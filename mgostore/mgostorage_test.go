@@ -59,13 +59,13 @@ func deleteTestDatabase(storage *MongoStorage) {
 	}
 }
 
-func setClient1234(storage *MongoStorage) (osin.DefaultClient, error) {
-	client := osin.DefaultClient{
-		Id:          "1234",
+func setClient1234(storage *MongoStorage) (*osin.DefaultClient, error) {
+	client := &osin.DefaultClient{
+		Id:          "52b298f8b6bb960ff805ef3b",
 		Secret:      "aabbccdd",
 		RedirectUri: "http://localhost:14000/appauth",
 	}
-	err := storage.SetClient(client.Id, &client)
+	err := storage.SetClient(client.Id, client)
 	return client, err
 }
 
@@ -91,7 +91,7 @@ func TestGetClient(t *testing.T) {
 		t.Errorf("getClient returned err: %v", err)
 		return
 	}
-	if !reflect.DeepEqual(&client, getClient) {
+	if !reflect.DeepEqual(client, getClient) {
 		t.Errorf("TestGet failed, expected: '%+v', got: '%+v'", client, getClient)
 	}
 }
@@ -102,7 +102,7 @@ func saveAuthorization(storage *MongoStorage) (*osin.AuthorizeData, error) {
 		return &osin.AuthorizeData{}, err
 	}
 	data := &osin.AuthorizeData{
-		Client:      &client,
+		Client:      client,
 		Code:        "9999",
 		ExpiresIn:   3600,
 		CreatedAt:   bson.Now(),
@@ -216,7 +216,7 @@ func TestLoadAccesses(t *testing.T) {
 		input[i] = data
 	}
 
-	client, err := storage.GetClient("1234")
+	client, err := storage.GetClient("52b298f8b6bb960ff805ef3b")
 	if err != nil {
 		t.Errorf("GetClient returned err: %v", err)
 	}
