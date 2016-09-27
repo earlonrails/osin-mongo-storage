@@ -40,6 +40,27 @@ func New(session *mgo.Session, dbName string) *MongoStorage {
 	return storage
 }
 
+// Clone implements the osin.Storage interface
+func (store *MongoStorage) Clone() osin.Storage {
+  return store
+}
+
+// Close implements the osin.Storage interface
+func (store *MongoStorage) Close() {
+
+}
+
+// GetClient implements the osin.Storage interface
+func (store *MongoStorage) GetClient(id string) (osin.Client, error) {
+  session := store.session.Copy()
+  defer session.Close()
+  clients := session.DB(store.dbName).C(CLIENT_COL)
+  mgoClient := models.NewMgoClient(nil)
+  err := clients.FindId(id).One(mgoClient)
+  // err := clients.FindId(bson.ObjectIdHex(id)).One(client)
+  return mgoClient.MapToOsinClient(), err
+}
+
 // SetClient stores a new osin.Client or updates an existing
 func (store *MongoStorage) SetClient(id string, client osin.Client) error {
 	session := store.session.Copy()
@@ -64,26 +85,6 @@ func (store *MongoStorage) LoadAccesses(query bson.M) ([]*osin.AccessData, error
 	}
 
 	return accessData, err
-}
-
-// Clone implements the osin.Storage interface
-func (store *MongoStorage) Clone() osin.Storage {
-	return store
-}
-
-// Close implements the osin.Storage interface
-func (store *MongoStorage) Close() {
-
-}
-
-// GetClient implements the osin.Storage interface
-func (store *MongoStorage) GetClient(id string) (osin.Client, error) {
-	session := store.session.Copy()
-	defer session.Close()
-	clients := session.DB(store.dbName).C(CLIENT_COL)
-	mgoClient := models.NewMgoClient(nil)
-	err := clients.FindId(id).One(mgoClient)
-	return mgoClient.MapToOsinClient(), err
 }
 
 // SaveAuthorize implements the osin.Storage interface
