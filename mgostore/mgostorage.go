@@ -59,7 +59,7 @@ func (store *MongoStorage) SetClient(id string, client osin.Client) error {
     session := store.session.Copy()
     defer session.Close()
     clients := session.DB(store.dbName).C(CLIENT_COL)
-    _, err := clients.UpsertId(id, client)
+    _, err := clients.UpsertId(bson.ObjectIdHex(id), client)
     return err
 }
 

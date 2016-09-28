@@ -58,11 +58,12 @@ func deleteTestDatabase(storage *MongoStorage) {
 	}
 }
 
-func setClient1234(storage *MongoStorage) (*osin.Client, error) {
-	client := &osin.Client{
-		Id:          "1234",
+func setClient1234(storage *MongoStorage) (*osin.DefaultClient, error) {
+	client := &osin.DefaultClient{
+		Id:          "52b298f8b6bb960ff805ef3b",
 		Secret:      "aabbccdd",
-		RedirectUri: "http://localhost:14000/appauth"}
+		RedirectUri: "http://localhost:14000/appauth",
+  }
 	err := storage.SetClient(client.Id, client)
 	return client, err
 }
