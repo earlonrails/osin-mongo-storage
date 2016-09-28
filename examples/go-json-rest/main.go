@@ -62,7 +62,7 @@ func setupRestAPI(router *mux.Router, oAuth *oAuthHandler) {
     router.Handle("/api/me", api.MakeHandler())
 }
 
-func setClient1234(storage *mgostore.MongoStorage) (osin.Client, error) {
+func setClient1234(storage *mgostore.MongoStorage) (*osin.DefaultClient, error) {
     client := &osin.DefaultClient{
         Id:          "1234",
         Secret:      "aabbccdd",
